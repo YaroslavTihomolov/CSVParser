@@ -3,8 +3,9 @@
 
 int main() {
     std::ifstream file("test.csv");
-    //std::cout << std::make_tuple(5, 30);
-    CSVParser<int, std::string, float> parser(file, 1);
-    auto t = std::tuple_cat(std::make_tuple(1), std::tuple_cat(std::make_tuple("nikita"), std::make_tuple())) ;
+    CSVParser<int, std::string> parser(file, 0);
+    for (CSVParser<int, std::string>& it : parser) {
+        std::cout << it;
+    }
     return 0;
 }
