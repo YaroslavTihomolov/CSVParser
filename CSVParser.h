@@ -9,6 +9,7 @@
 #include "TuplePrint.h"
 #include <sstream>
 #include <utility>
+#include "Exceptions.h"
 
 template<class... Args>
 class CSVParser {
@@ -21,21 +22,23 @@ private:
     char column_separator{};
     char shielding{};
 
+    int line_num{};
+
     template <class... Tuple>
     auto getTuple(int cur_pos, int_<sizeof...(Args)>) {
-        if (cur_pos != 0) throw std::invalid_argument("Wrong input");
+        if (cur_pos != 0) throw Exceptions(line_num, cur_pos, WRONG_DATA, "WRONG_DATA");
         return std::make_tuple();
     }
 
     template<class T>
-    T DataToHead(std::string substring, T data) {
+    T DataToHead(std::string substring, T data, int cur_pos) {
         std::stringstream tmp_s(substring);
         tmp_s >> data;
-        if (!tmp_s.eof()) throw std::invalid_argument("Wrong input");
+        if (!tmp_s.eof()) throw Exceptions(line_num, cur_pos, WRONG_DATA, "WRONG_DATA");
         return data;
     }
 
-    std::string DataToHead(std::string substring, std::string data) {
+    std::string DataToHead(std::string substring, std::string data, int cur_pos) {
         data = substring;
         return data;
     }
@@ -45,8 +48,8 @@ private:
         Head cur;
         int r_pos = (line[cur_pos] == shielding)? line.find(shielding, ++cur_pos): line.find(column_separator, cur_pos);
         std::string substring = line.substr(cur_pos, r_pos - cur_pos);
-        if (substring.empty()) throw std::invalid_argument("Wrong input");
-        cur = DataToHead(substring, cur);
+        if (substring.empty()) throw Exceptions(line_num, cur_pos + 1, WRONG_DATA, "WRONG_DATA");
+        cur = DataToHead(substring, cur, cur_pos);
         r_pos += (line[r_pos] == shielding)? 2: 1;
         return std::tuple_cat(std::make_tuple(cur), getTuple<Tuple...>(r_pos, int_<pos + 1>()));
     }
@@ -65,7 +68,7 @@ public:
     CSVParser() = default;
 
     CSVParser(std::ifstream& file_inp, int line_skip, char column, char sep_line, char shielding_inp):
-                        lines_separator(sep_line), column_separator(column), shielding(shielding_inp) {
+            lines_separator(sep_line), column_separator(column), shielding(shielding_inp), line_num(line_skip + 1) {
         file.basic_ios<char>::rdbuf(file_inp.rdbuf());
         SkipLines(line_skip);
         std::getline(file, line, lines_separator);
@@ -105,6 +108,7 @@ public:
                 *this = nullptr;
                 return *this;
             }
+            value->line_num++;
             std::getline(value->file, value->line, value->lines_separator);
             value->cur_tuple = value->template getTuple<Args...>(0, int_<0>());
             return *this;
