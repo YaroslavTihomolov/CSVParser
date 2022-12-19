@@ -10,7 +10,7 @@
 
 template <std::size_t> struct int_{};
 
-/*template <class Tuple>
+template <class Tuple>
 std::ostream& PrintTuple(std::ostream& out, const Tuple& t, int_<1>) {
     return out << std::get<std::tuple_size<Tuple>::value - 1>(t);
 }
@@ -23,12 +23,12 @@ std::ostream& PrintTuple(std::ostream& out, const Tuple& t, int_<pos>) {
 
 template<class... Args>
 std::ostream& operator<<(std::ostream& out, const std::tuple<Args...>& t) {
-    out << "(";
+    out << "{";
     PrintTuple(out, t, int_<sizeof...(Args)>());
-    return out << ")";
-}*/
+    return out << "}";
+}
 
-template<class Os, class... Args>
+/*template<class Os, class... Args>
 Os& operator<< (Os& os, const std::tuple<Args...>& t) {
     os << "{ ";
     std::apply([&](auto&& arg, auto&&... args) {
@@ -36,6 +36,6 @@ Os& operator<< (Os& os, const std::tuple<Args...>& t) {
         ((os << ", " << args), ...);
     }, t);
     return os << " }";
-}
+}*/
 
 #endif //CSVPARSER_TUPLEPRINT_H
