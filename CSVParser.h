@@ -16,17 +16,16 @@ private:
 
     std::string line;
 
-    auto getTuple(int cur_pos, int_<sizeof...(Args)>) {
-        return std::make_tuple();
-    }
+    template <class... Tuple>
+    auto getTuple(int cur_pos, int_<sizeof...(Args)>) { return std::make_tuple(); }
 
-    template <std::size_t pos>
+    template <class Head, class... Tuple, std::size_t pos>
     auto getTuple(int cur_pos, int_<pos>) {
+        Head cur;
         int r_pos = line.find(',', cur_pos);
         std::string substring = line.substr(cur_pos, r_pos - cur_pos);
-        std::tuple_element_t<pos, std::tuple<Args...>> tmp;
-        std::istringstream(substring) >> tmp;
-        return std::tuple_cat(std::make_tuple(tmp), getTuple(r_pos + 1, int_<pos + 1>()));
+        std::istringstream(substring) >> cur;
+        return std::tuple_cat(std::make_tuple(cur), getTuple<Tuple...>(r_pos + 1, int_<pos + 1>()));
     }
 
     std::tuple<Args...> cur_tuple;
@@ -46,7 +45,7 @@ public:
         file.basic_ios<char>::rdbuf(file_inp.rdbuf());
         SkipLines(line_skip);
         std::getline(file, line);
-        cur_tuple = getTuple(0, int_<0>());
+        cur_tuple = getTuple<Args...>(0, int_<0>());
     }
 
     template<class Iter>
@@ -83,7 +82,7 @@ public:
                 return *this;
             }
             std::getline(value->file, value->line);
-            value->cur_tuple = value->getTuple(0, int_<0>());
+            value->cur_tuple = value->template getTuple<Args...>(0, int_<0>());
             return *this;
         }
 
@@ -120,6 +119,21 @@ public:
     }
 
 };
+
+
+/*auto getTuple(int cur_pos, int_<sizeof...(Args)>) {
+    return std::make_tuple();
+}
+
+template <std::size_t pos>
+auto getTuple(int cur_pos, int_<pos>) {
+    int r_pos = line.find(',', cur_pos);
+    std::string substring = line.substr(cur_pos, r_pos - cur_pos);
+    std::tuple_element_t<pos, std::tuple<Args...>> tmp;
+    std::istringstream(substring) >> tmp;
+    return std::tuple_cat(std::make_tuple(tmp), getTuple(r_pos + 1, int_<pos + 1>()));
+}*/
+
 
 #endif //CSVPARSER_CSVPARSER_H
 
