@@ -10,8 +10,7 @@
 #include <fstream>
 
 template<std::size_t>
-struct int_ {
-};
+struct int_ { };
 
 /*template<typename... Args> struct tuple;
 
