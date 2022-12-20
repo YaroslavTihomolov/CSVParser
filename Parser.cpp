@@ -8,8 +8,12 @@ Parser::Parser(int argc, char** argv) {
             ("column_separator", po::value<char>(&column_separator), "--column_separator=[symbol]")
             ("shielding", po::value<char>(&shielding), "--shielding=[symbol]")
             ;
-    po::store(po::parse_command_line(argc, argv, desc), vm);
-    po::notify(vm);
+    try {
+        po::store(po::parse_command_line(argc, argv, desc), vm);
+        po::notify(vm);
+    } catch(po::error &e) {
+        throw Exceptions(BAD_ARGS, e.what());
+    }
 
     if (tmp == "\\n")
         lines_separator = '\n';

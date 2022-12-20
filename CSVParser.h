@@ -24,17 +24,29 @@ private:
 
     int line_num{};
 
-    template <class... Tuple>
+    template<class... Tuple>
     auto getTuple(int cur_pos, int_<sizeof...(Args)>) {
-        if (cur_pos != 0) throw Exceptions(line_num, cur_pos, WRONG_DATA, "WRONG_DATA");
+        if (cur_pos != 0 && cur_pos != (line.length() + 1)) throw Exceptions(line_num, cur_pos, WRONG_DATA, "WRONG_DATA");
         return std::make_tuple();
     }
 
     template<class T>
-    T DataToHead(std::string substring, T data, int cur_pos) {
+    T DataToHead(const std::string& substring, T data, int cur_pos) {
         std::stringstream tmp_s(substring);
         tmp_s >> data;
-        if (!tmp_s.eof()) throw Exceptions(line_num, cur_pos, WRONG_DATA, "WRONG_DATA");
+        if (!tmp_s.eof()) throw Exceptions(line_num,cur_pos + tmp_s.tellg() + 1, WRONG_DATA, "WRONG_DATA");
+        return data;
+    }
+
+    char DataToHead(std::string substring, char data, int cur_pos) {
+        if (substring.length() == 1) data = substring[0];
+        else throw Exceptions(line_num, cur_pos, WRONG_DATA, "WRONG_DATA");
+        return data;
+    }
+
+    unsigned char DataToHead(std::string substring, unsigned char data, int cur_pos) {
+        if (substring.length() == 1) data = substring[0];
+        else throw Exceptions(line_num, cur_pos, WRONG_DATA, "WRONG_DATA");
         return data;
     }
 
@@ -43,14 +55,25 @@ private:
         return data;
     }
 
-    template <class Head, class... Tuple, std::size_t pos>
+    int GetRpos(int &cur_pos) {
+        int r_pos;
+        if (line[cur_pos] == shielding) {
+            r_pos = line.find(shielding, ++cur_pos);
+            if (r_pos == std::string::npos) return line.find(column_separator, --cur_pos);
+        } else {
+            r_pos = line.find(column_separator, cur_pos);
+        }
+        return r_pos;
+    }
+
+    template<class Head, class... Tuple, std::size_t pos>
     auto getTuple(int cur_pos, int_<pos>) {
         Head cur;
-        int r_pos = (line[cur_pos] == shielding)? line.find(shielding, ++cur_pos): line.find(column_separator, cur_pos);
+        int r_pos = GetRpos(cur_pos);
         std::string substring = line.substr(cur_pos, r_pos - cur_pos);
         if (substring.empty()) throw Exceptions(line_num, cur_pos + 1, WRONG_DATA, "WRONG_DATA");
         cur = DataToHead(substring, cur, cur_pos);
-        r_pos += (line[r_pos] == shielding)? 2: 1;
+        r_pos += (line[r_pos] == shielding) ? 2 : 1;
         return std::tuple_cat(std::make_tuple(cur), getTuple<Tuple...>(r_pos, int_<pos + 1>()));
     }
 
@@ -59,6 +82,7 @@ private:
     void SkipLines(int lines) {
         while (lines--) {
             std::string line_to_skip;
+            if (file.eof()) throw Exceptions(WRONG_COUNT_OF_LINES, "WRONG_COUNT_OF_LINES");
             std::getline(file, line_to_skip, lines_separator);
         }
     }
@@ -67,7 +91,7 @@ public:
 
     CSVParser() = default;
 
-    CSVParser(std::ifstream& file_inp, int line_skip, char column, char sep_line, char shielding_inp):
+    CSVParser(std::ifstream &file_inp, int line_skip, char column, char sep_line, char shielding_inp) :
             lines_separator(sep_line), column_separator(column), shielding(shielding_inp), line_num(line_skip + 1) {
         file.basic_ios<char>::rdbuf(file_inp.rdbuf());
         SkipLines(line_skip);
@@ -82,20 +106,20 @@ public:
     private:
         typedef Iter iterator_type;
 
-        typedef iterator_type& reference;
+        typedef iterator_type &reference;
 
-        iterator_type* value;
+        iterator_type *value;
     public:
 
-        CSVParserIterator(Iter* p): value(p) { }
+        CSVParserIterator(Iter *p) : value(p) {}
 
-        CSVParserIterator(const CSVParserIterator& it) : value(it.value) { }
+        CSVParserIterator(const CSVParserIterator &it) : value(it.value) {}
 
-        bool operator!=(CSVParserIterator const& other) const {
+        bool operator!=(CSVParserIterator const &other) const {
             return value != other.value;
         }
 
-        bool operator==(CSVParserIterator const& other) const {
+        bool operator==(CSVParserIterator const &other) const {
             return value == other.value;
         }
 
@@ -103,13 +127,17 @@ public:
             return *value;
         }
 
-        CSVParserIterator& operator++() {
-            if (value->file.eof())  {
+        CSVParserIterator &operator++() {
+            if (value->file.eof()) {
                 *this = nullptr;
                 return *this;
             }
             value->line_num++;
             std::getline(value->file, value->line, value->lines_separator);
+            if (value->line.length() == 0)  {
+                *this = nullptr;
+                return *this;
+            }
             value->cur_tuple = value->template getTuple<Args...>(0, int_<0>());
             return *this;
         }
@@ -123,7 +151,7 @@ private:
 public:
 
     iterator begin() {
-        CSVParser<Args...>* csvparser = this;
+        CSVParser<Args...> *csvparser = this;
         return iterator(csvparser);
     }
 
@@ -132,7 +160,7 @@ public:
     }
 
     const_iterator begin() const {
-        CSVParser<Args...>* csvparser = this;
+        CSVParser<Args...> *csvparser = this;
         return const_iterator(csvparser);
     }
 
@@ -140,9 +168,9 @@ public:
         return nullptr;
     }
 
-    CSVParser(const CSVParser&) = delete;
+    CSVParser(const CSVParser &) = delete;
 
-    friend std::ostream& operator<<(std::ostream& out, const CSVParser& csvparser) {
+    friend std::ostream &operator<<(std::ostream &out, const CSVParser &csvparser) {
         return out << csvparser.cur_tuple << '\n';
     }
 

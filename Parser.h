@@ -2,9 +2,10 @@
 #define CSVPARSER_PARSER_H
 
 #include <iostream>
-#include "boost/program_options.hpp"
 #include <string>
 #include <vector>
+#include "boost/program_options.hpp"
+#include "Exceptions.h"
 
 namespace po = boost::program_options;
 
@@ -14,7 +15,7 @@ private:
 public:
     Parser(int, char**);
     char lines_separator;
-    char column_separator;
+    char column_separator{};
     char shielding = '"';
 };
 

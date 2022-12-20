@@ -8,32 +8,29 @@
 enum {
     WRONG_FILE = 2,
     BAD_ARGS,
-    WRONG_DATA
+    WRONG_DATA,
+    WRONG_COUNT_OF_LINES
 };
 
 class Exceptions : std::exception {
-    int line;
-    int column;
+private:
+    int line = 0;
+    int column = 0;
     int return_code;
     std::string error;
 public:
     explicit Exceptions(int cur_line, int cur_column,int code, std::string er) : line(cur_line),
                                 column(cur_column), return_code(code), error(er) {}
 
-    int what_line() {
-        return this->line;
-    }
-
-    std::string what_error() {
-        return this->error;
-    }
-
-    int what_column() {
-        return this->column;
-    }
+    explicit Exceptions(int code, std::string er) : return_code(code), error(er) {}
 
     int ret_code() {
         return this->return_code;
+    }
+
+    friend std::ostream& operator<<(std::ostream& out, const Exceptions& ex) {
+        if (ex.line == 0 && ex.column == 0) return out << ex.error;
+        else return out << ex.line << ":" << ex.column << " " << ex.error;
     }
 };
 

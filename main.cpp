@@ -1,20 +1,24 @@
 #include "TuplePrint.h"
 #include "CSVParser.h"
 #include "Parser.h"
+#include <ctime>
 
 int main(int argc, char** argv) {
-    std::ifstream file("test.csv");
-    Parser inp_parser(argc, argv);
     try {
-        CSVParser<int, std::string, float> parser(file, 0, inp_parser.column_separator,
+        std::ifstream file("test.csv");
+        if (!file.is_open()) throw Exceptions(WRONG_FILE, "WRONG_FILE");
+        Parser inp_parser(argc, argv);
+        unsigned int start_time =  clock();
+        CSVParser<int, std::string, std::string> parser(file, 0, inp_parser.column_separator,
                                                 inp_parser.lines_separator, inp_parser.shielding);
-        for (CSVParser<int, std::string, float> &it: parser) {
+        std::ofstream out("out.txt");
+        for (CSVParser<int, std::string, std::string> &it: parser) {
             std::cout << it;
         }
-    }
-    catch (Exceptions& ex) {
+        //std::cout << clock() - start_time;
+    } catch (Exceptions& ex) {
         std::cout.flush();
-        std::cerr << ex.what_line() << ":" << ex.what_column() << "    " << ex.what_error();
+        std::cerr << ex;
         return ex.ret_code();
     }
     return 0;
